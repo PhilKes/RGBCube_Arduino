@@ -1,49 +1,99 @@
-/* FUNCTIONS;
-    MINE:
-    mapping();            //jede Led einzeln, 500ms Delay
-    mappingSerial();      //mapping mit Serial Monitor(int i beachten!)
-    testLed(int pin);     //testet Led auf Pin pin
-    CubeUpdate(int layer);//aktualisiert EbeneNr layer(schickt werte an TLCs, schaltet Ebene layer ein
-    AllRed();            //Schaltet alle Roten/Blauen/Grünen Leds auf allen Ebenen ein
-    AllBlue();
-    AllGreen();
-    ColorCycle();
-    Snake()
-    randomLeds(int anzR,int anzG,int anzB);//Schaltet jeden 2.Frame zufällig Rote/Grüne/Blaue Leds an (anzR,...)
-    wallWaag(int brightR,int brightG,int brightB); // Waagrechte Wand (hin und her)
-    wallWaagSenk(int brightR,int brightG,int brightB);//"       "       "      , Senkrechte Wand(hoch, runter)
-    littleCube(int brightR,int brightG,int brightB)    //2x2 Cube Schlangenbahn von Mitte aus
-    RGBColorRoom();//Zeigt komplettes RGB - Farbspektrum
-    AllOff();            //Schaltet alle Leds auf allen Ebenen aus
-*/
-/*void mappingSerial()
-{  
-  Tlc.set(i,3000);
-  Tlc.update();
-  do{}
-  while(Serial.read()!=110);
-  Tlc.set(i,0);
-  i++; 
-}
-*/
 #define RED 2
 #define GREEN 1
 #define BLUE 0
 
+//------CONTROL FUNCTIONS
 //Position (x,y,l) Color: 'r','g','b'
 void setLed(uint8_t x, uint8_t y, uint8_t l,uint8_t color,uint16_t value)
 {
 	Tlc.set((x * 3) + (y * CUBE_SIZE * 3)+color,l, value);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
 }
+void CubeUpdate(uint8_t layer)  //Updated Layer layerno(schickt Werte in TLCs, schaltet Layer layerno ein
+{
+	/*
+	  for(int y=0;y<CUBE_SIZE;y++)
+	   {
+		 for(int x=0;x<CUBE_SIZE;x++)
+		 {
+		   Tlc.set(LedRed[y][x],ValueLed[layerno][LedRed[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
+		   Tlc.set(LedGreen[y][x],ValueLed[layerno][LedGreen[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940
+		   Tlc.set(LedBlue[y][x],ValueLed[layerno][LedBlue[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940
+		 }
+	   }
+	 */
+	 //CAUTION ONLY FOR CUBE_SIZE = 6
+  int updateTime= micros();
+	PORTC = PORTC|B00111111;
+	Tlc.update(layer);
+	delay(1);
+	//Substitute with Port Manipulation
+	//digitalWrite(layers[layer], LOW);
+	PORTC = PORTC & (B00111111 & ~(1 << layer));
+  Serial.print("UPDATE:");
+  int mic=micros()-updateTime;
+  Serial.print(mic);
+  Serial.println();
+	//delayMicroseconds(200);
+}
+void setPane(int pane, int val) 
+{
+	for (int l = 0; l < CUBE_SIZE; l++)
+		for (int y = 0; y < CUBE_SIZE; y++)
+			setLed(pane, y, l, RED, val);
+			//ValueLed[l][+ y * CUBE_SIZE * 3] = val; //RED ONLY
+		   // ValueLed[l][x*3+1+y*CUBE_SIZE*3]=val;
+		   //ValueLed[l][x*3+2+y*CUBE_SIZE*3]=val;
+
+}
+void testLed(int pin, int layer)
+{
+	setLed(pin % (CUBE_SIZE * 3), pin / (CUBE_SIZE * 3), layer, BLUE, MAXBRIGHT);
+}
+void AllRed()
+{
+	for (int l = 0; l < 4; l++)
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 4; x++)
+				setLed(y, x, l, RED, brightR);
+}
+void AllGreen()
+{
+	for (int l = 0; l < 4; l++)
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 4; x++)
+				setLed(y, x, l, GREEN, brightG);
+}
+void AllBlue()
+{
+	for (int l = 0; l < 4; l++)
+		for (int y = 0; y < 4; y++)
+			for (int x = 0; x < 4; x++)
+				setLed(y, x, l, BLUE, brightB);
+}
+void AllOff()
+{
+	Tlc.clearAll();
+}
+void mappingfull()
+{
+	/*
+		for(int i=0;i<FrameCount;i++)
+		   ValueLed[i/48][i%48]=maxbright;
+	   if(FrameCount/48==4)
+			FrameCount=0;
+	   */
+}
+
+//------ANIMATIONS
 void RGBColorRoom()
 {	
 		for(int l=0;l<4;l++)
 			for(int y=0;y<4;y++)
 				for(int x=0;x<4;x++)
 				{
-					setLed(y,x,l,RED,100+x*1300);
-					setLed(y,x,l,GREEN,100+l*800);
-					setLed(y,x,l,BLUE,50+y*500);
+					setLed(x,y,l,RED,100+x*1300);
+					setLed(x,y,l,GREEN,100+l*800);
+					setLed(x,y,l,BLUE,50+y*500);
 				}
 		FrameCount=0;
 }
@@ -76,15 +126,6 @@ void ColorCycle()
 	AllGreen();
 	AllBlue();
 }
-void mappingfull()
-{
-/*
-    for(int i=0;i<FrameCount;i++)
-       ValueLed[i/48][i%48]=maxbright;
-   if(FrameCount/48==4)
-        FrameCount=0;
-   */
-}
 void Snake()
 {
   if(FrameCount==0)MAXCOUNT=383;
@@ -92,15 +133,15 @@ void Snake()
   {
       int temp=FrameCount;
       if(temp>63)temp=63;
-      for(int i=0;i<=temp/16;i++)
+      for(int i=0;i<=temp/(CUBE_SIZE*CUBE_SIZE);i++)
       {
-        for(int j=0;j<=temp%16;j++)
-            setLed(j/CUBE_SIZE,j%CUBE_SIZE,i,RED,MAXBRIGHT);
+        for(int j=0;j<=temp%(CUBE_SIZE*CUBE_SIZE);j++)
+            setLed(j%CUBE_SIZE,j/CUBE_SIZE,i,RED,MAXBRIGHT);
         if(i>0)
           for(int k=0;k<i;k++)
             for(int x=0;x<CUBE_SIZE;x++)
               for(int y=0;y<CUBE_SIZE;y++)
-                setLed(y,x,k,RED,MAXBRIGHT);
+                setLed(x,y,k,RED,MAXBRIGHT);
       }
   }
   if(FrameCount>63)
@@ -115,7 +156,7 @@ void Snake()
           for(int k=0;k<i;k++)
             for(int x=0;x<4;x++)
               for(int y=0;y<4;y++)
-                setLed(y,x,k,GREEN,MAXBRIGHT);
+                setLed(x,y,k,GREEN,MAXBRIGHT);
       }
   }
   if(FrameCount>127)
@@ -130,7 +171,7 @@ void Snake()
           for(int k=0;k<i;k++)
             for(int x=0;x<4;x++)
               for(int y=0;y<4;y++)
-                setLed(y,x,k,BLUE,MAXBRIGHT);
+                setLed(x,y,k,BLUE,MAXBRIGHT);
       }
   }
   if(FrameCount>191)
@@ -145,7 +186,7 @@ void Snake()
           for(int k=0;k<i;k++)
             for(int x=0;x<4;x++)
               for(int y=0;y<4;y++)
-                setLed(y,x,k,RED,0);
+                setLed(x,y,k,RED,0);
       }
   }
   if(FrameCount>255)
@@ -160,7 +201,7 @@ void Snake()
           for(int k=0;k<i;k++)
             for(int x=0;x<4;x++)
               for(int y=0;y<4;y++)
-                setLed(y,x,k,GREEN,0);
+                setLed(x,y,k,GREEN,0);
       }
   }
   if(FrameCount>319)
@@ -175,12 +216,13 @@ void Snake()
           for(int k=0;k<i;k++)
             for(int x=0;x<4;x++)
               for(int y=0;y<4;y++)
-                setLed(y,x,k,BLUE,0);
+                setLed(x,y,k,BLUE,0);
       }
   }
   //if(FrameCount==383)
   //  FrameCount=0;
 }
+
 void wallSenk(int brR,int brG,int brB,boolean last)
 {
   switch(FrameCount)
@@ -189,81 +231,81 @@ void wallSenk(int brR,int brG,int brB,boolean last)
             for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,3,RED,brR);
-				setLed(y,x,3,GREEN,brG);
-				setLed(y,x,3,BLUE,brB);
+                setLed(x,y,3,RED,brR);
+				setLed(x,y,3,GREEN,brG);
+				setLed(x,y,3,BLUE,brB);
               }
          break;
     case 1:
             for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,2,RED,brR);
-				setLed(y,x,2,GREEN,brG);
-				setLed(y,x,2,BLUE,brB);
-				setLed(y,x,3,RED,brR/4);
-				setLed(y,x,3,GREEN,brG/4);
-				setLed(y,x,3,BLUE,brB/4);
+                setLed(x,y,2,RED,brR);
+				setLed(x,y,2,GREEN,brG);
+				setLed(x,y,2,BLUE,brB);
+				setLed(x,y,3,RED,brR/4);
+				setLed(x,y,3,GREEN,brG/4);
+				setLed(x,y,3,BLUE,brB/4);
               }
          break;
     case 2:  
             for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,1,RED,brR);
-				setLed(y,x,1,GREEN,brG);
-				setLed(y,x,1,BLUE,brB);
-				setLed(y,x,2,RED,brR/4);
-				setLed(y,x,2,GREEN,brG/4);
-				setLed(y,x,2,BLUE,brB/4);
-				setLed(y,x,3,RED,brR/8);
-				setLed(y,x,3,GREEN,brG/8);
-				setLed(y,x,3,BLUE,brB/8);
+                setLed(x,y,1,RED,brR);
+				setLed(x,y,1,GREEN,brG);
+				setLed(x,y,1,BLUE,brB);
+				setLed(x,y,2,RED,brR/4);
+				setLed(x,y,2,GREEN,brG/4);
+				setLed(x,y,2,BLUE,brB/4);
+				setLed(x,y,3,RED,brR/8);
+				setLed(x,y,3,GREEN,brG/8);
+				setLed(x,y,3,BLUE,brB/8);
               }
               break;
     case 3:
            for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,0,RED,brR);
-				setLed(y,x,0,GREEN,brG);
-				setLed(y,x,0,BLUE,brB);
-				setLed(y,x,1,RED,brR/4);
-				setLed(y,x,1,GREEN,brG/4);
-				setLed(y,x,1,BLUE,brB/4);
-				setLed(y,x,2,RED,brR/8);
-				setLed(y,x,2,GREEN,brG/8);
-				setLed(y,x,2,BLUE,brB/8);
-				setLed(y,x,3,RED,brR/16);
-				setLed(y,x,3,GREEN,brG/16);
-				setLed(y,x,3,BLUE,brB/16);
+                setLed(x,y,0,RED,brR);
+				setLed(x,y,0,GREEN,brG);
+				setLed(x,y,0,BLUE,brB);
+				setLed(x,y,1,RED,brR/4);
+				setLed(x,y,1,GREEN,brG/4);
+				setLed(x,y,1,BLUE,brB/4);
+				setLed(x,y,2,RED,brR/8);
+				setLed(x,y,2,GREEN,brG/8);
+				setLed(x,y,2,BLUE,brB/8);
+				setLed(x,y,3,RED,brR/16);
+				setLed(x,y,3,GREEN,brG/16);
+				setLed(x,y,3,BLUE,brB/16);
               }
            break;
     case 4:
             for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,1,RED,brR);
-				setLed(y,x,1,GREEN,brG);
-				setLed(y,x,1,BLUE,brB);
-				setLed(y,x,0,RED,brR/4);
-				setLed(y,x,0,GREEN,brG/4);
-				setLed(y,x,0,BLUE,brB/4);
+                setLed(x,y,1,RED,brR);
+				setLed(x,y,1,GREEN,brG);
+				setLed(x,y,1,BLUE,brB);
+				setLed(x,y,0,RED,brR/4);
+				setLed(x,y,0,GREEN,brG/4);
+				setLed(x,y,0,BLUE,brB/4);
               }
             break;
     case 5:
             for(int y=0;y<4;y++)
               for(int x=0;x<4;x++)
               {
-                setLed(y,x,2,RED,brR);
-				setLed(y,x,2,GREEN,brG);
-				setLed(y,x,2,BLUE,brB);
-				setLed(y,x,1,RED,brR/4);
-				setLed(y,x,1,GREEN,brG/4);
-				setLed(y,x,1,BLUE,brB/4);
-				setLed(y,x,0,RED,brR/8);
-				setLed(y,x,0,GREEN,brG/8);
-				setLed(y,x,0,BLUE,brB/8);
+                setLed(x,y,2,RED,brR);
+				setLed(x,y,2,GREEN,brG);
+				setLed(x,y,2,BLUE,brB);
+				setLed(x,y,1,RED,brR/4);
+				setLed(x,y,1,GREEN,brG/4);
+				setLed(x,y,1,BLUE,brB/4);
+				setLed(x,y,0,RED,brR/8);
+				setLed(x,y,0,GREEN,brG/8);
+				setLed(x,y,0,BLUE,brB/8);
               }
 			 if(last)
 				FrameCount=0;
@@ -452,45 +494,21 @@ void wallWaag(int brR,int brG,int brB,int side,boolean last)
     }
   }
 }
-void testLed(int pin,int layer)
-{
-	setLed(pin % (CUBE_SIZE * 3), pin / (CUBE_SIZE * 3), layer, BLUE, MAXBRIGHT);
-}
-void AllRed()
-{
-    for(int l=0;l<4;l++)
-      for(int y=0;y<4;y++)
-        for(int x=0;x<4;x++)
-  	       setLed(y,x,l,RED,brightR);
-}
-void AllGreen()
-{
-    for(int l=0;l<4;l++)
-      for(int y=0;y<4;y++)
-        for(int x=0;x<4;x++)
-  			setLed(y,x,l,GREEN,brightG);
-}
-void AllBlue()
-{
-    for(int l=0;l<4;l++)
-      for(int y=0;y<4;y++)
-        for(int x=0;x<4;x++)
-  			setLed(y,x,l,BLUE,brightB);
-}
+
 void randomLedsFull()
 {
-      for(int j=0;j<4;j++)
-      {
-    	for(int x=0;x<4;x++)
-			for (int y = 0; y < 4; y++)
+  for(int j=0;j<CUBE_SIZE;j++)
+  {
+    for(int x=0;x<CUBE_SIZE;x++)
+			for (int y = 0; y < CUBE_SIZE; y++)
 			{
 				int rand = random(0, 3);
 				if (rand == 0)
-					setLed(y, x, j, RED, MAXBRIGHT);
+					setLed(x, y, j, RED, MAXBRIGHT);
 				else if (rand == 1)
-					setLed(y, x, j, GREEN, MAXBRIGHT);
+					setLed(x, y, j, GREEN, MAXBRIGHT);
 				else if (rand == 2)
-					setLed(y, x, j, BLUE, MAXBRIGHT);
+					setLed(x, y, j, BLUE, MAXBRIGHT);
 			}
       FrameCount=0;
     }   
@@ -498,37 +516,14 @@ void randomLedsFull()
 void randomLeds(int anzR,int anzG,int anzB)
 {
       for (int p=anzR;p>0;p--)
-        setLed(random(0,4),random(0,4),random(0,4),RED,MAXBRIGHT);
+        setLed(random(0,CUBE_SIZE),random(0,CUBE_SIZE),random(0,CUBE_SIZE),RED,MAXBRIGHT);
       for (int p=anzG;p>0;p--)
-        setLed(random(0,4),random(0,4),random(0,4),GREEN,MAXBRIGHT);
+        setLed(random(0,CUBE_SIZE),random(0,CUBE_SIZE),random(0,CUBE_SIZE),GREEN,MAXBRIGHT);
       for (int p=anzB;p>0;p--)
-        setLed(random(0,4),random(0,4),random(0,4),BLUE,MAXBRIGHT);
+        setLed(random(0,CUBE_SIZE),random(0,CUBE_SIZE),random(0,CUBE_SIZE),BLUE,MAXBRIGHT);
       FrameCount=0;
 }
-void AllOff()
-{
-	Tlc.clearAll();
-}
- void CubeUpdate(uint8_t layer)  //Updated Layer layerno(schickt Werte in TLCs, schaltet Layer layerno ein
- {
- /*
-   for(int y=0;y<CUBE_SIZE;y++)
-    {
-      for(int x=0;x<CUBE_SIZE;x++)
-      {
-        Tlc.set(LedRed[y][x],ValueLed[layerno][LedRed[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
-        Tlc.set(LedGreen[y][x],ValueLed[layerno][LedGreen[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940 
-        Tlc.set(LedBlue[y][x],ValueLed[layerno][LedBlue[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940 
-      }
-    }
-  */
-	 //CAUTION ONLY FOR CUBE_SIZE = 6
-    PORTC=B00111111;
-    Tlc.update(layer);
-    delay(1);
-    digitalWrite(layers[layer],LOW);
-    //delayMicroseconds(200);
-}
+
 void littleCube()
 {
   //AllOff();
@@ -741,27 +736,27 @@ void zeichnelittleCube(int posl,int posy,int posx)
    for(int y=posy;y<posy+2;y++)
     for(int x=posx;x<posx+2;x++)
 	{
-      setLed(y,x,l,RED,brightR);
-      setLed(y,x,l,GREEN,brightG);
-      setLed(y,x,l,BLUE,brightB);
+      setLed(x,y,l,RED,brightR);
+      setLed(x,y,l,GREEN,brightG);
+      setLed(x,y,l,BLUE,brightB);
     }
 }  
 void aniTest()
 {
   //Serial.println("---------FRAME----------");
   //micro=micros();
-    for(int l=0;l<4;l++)
-      for(int y=0;y<4;y++)
-        for(int x=0;x<4;x++)
+    for(int l=0;l<CUBE_SIZE;l++)
+      for(int y=0;y<CUBE_SIZE;y++)
+        for(int x=0;x<CUBE_SIZE;x++)
         {
           //animation                        : 1st LED Red 1st Frame
           //animation+1                      : 1st LED Green 1st Frame
           //animation+2                      : 1st LED Blue 1st Frame
           //animation+FrameCount*(NUM_TLC*16): 1st LED Red 2nd Frame
           //animation+(x*3+y*CUBE_SIZE*3)    : (x,y) LED Red 
-         // setLed(y,x,l,RED, pgm_read_word_near(animation+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
-          //setLed(y,x,l,GREEN, pgm_read_word_near(animation+1+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
-          //setLed(y,x,l,BLUE, pgm_read_word_near(animation+2+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
+          setLed(x,y,l,RED, pgm_read_word_near(animation+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
+          setLed(x,y,l,GREEN, pgm_read_word_near(animation+1+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
+          setLed(x,y,l,BLUE, pgm_read_word_near(animation+2+FrameCount*(NUM_TLCS *16*CUBE_SIZE)+l*NUM_TLCS*16+(x*3+y*CUBE_SIZE*3)));
         }
     //Serial.println(micros()-micro);
 }
