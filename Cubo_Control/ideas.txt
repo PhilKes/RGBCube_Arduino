@@ -1,0 +1,8 @@
+Frame refresh parrallel to Waiting for next layer
+if(LayerTime?)
+	Refresh Layer with Tlc.update()
+else(FrameTime?)
+	Refresh ValueLed with animation
+	
+ValueLed to uint8_t -> setAllDC() ?
+Textscroll -> Whitespace at the end 

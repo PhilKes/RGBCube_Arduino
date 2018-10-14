@@ -1,0 +1,9 @@
+Clock Cube 
+Countdown
+Music Spectrum (Pillars/Columns/Color)
+Text Scroll
+RandomColors
+RGB Spectrum
+RGB Shifting
+Snake?
+Tetris?
