@@ -1,8 +1,0 @@
- X: 0-9
- "AXX"	:	Animation 00-99
- "RXXXX":	Red 0000-4096
- "GXXXX":	Green 0000-4096
- "BXXXX":	Blue 0000-4096
- "SXXXX":	FrameTime 0000-9999
- "FXXX"	:	Frame 000-999
- 

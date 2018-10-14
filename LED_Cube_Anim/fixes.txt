@@ -1,4 +1,0 @@
--3d view editing
--3d view LED glow effect
--continous/AllOff
--Mono Farbauswahl
