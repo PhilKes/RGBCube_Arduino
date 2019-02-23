@@ -6,9 +6,10 @@
 #define CUBE_SIZE 6
 
 #define TEXTSCROLL_NUM 99
-#define FRAME_TIME_DEFAULT 300
+#define FRAME_TIME_DEFAULT 170
 #define FRAME_TIME_MIN 20
-#define MAXBRIGHT 4000
+//#define MAXBRIGHT 4000
+#define MAXBRIGHT 255
 #define SPEED_DIV 50.0
 #define FRAMECYCLES 20
 
@@ -25,15 +26,16 @@
 #include "font6.h"
 //#include "cube_Grow.h"
 #include "waterfallRGBit.h"
+#include "cubeBuildRGBit.h"
 #include "cubeGrowRGBit.h"
 //#include "waveContinuous.h"
 
- uint8_t layers[]={A0,A1,A2,A3,A4,A5};
+uint8_t layers[]={A0,A1,A2,A3,A4,A5};
 
 //FRAME & LAYER
 uint8_t curAnim;
 //LayerDuration 2860 min.
-uint16_t LayerDuration = 1700;
+uint16_t LayerDuration = 1500;
 uint16_t FRAME_TIME=FRAME_TIME_DEFAULT;
 //Default Frame Times for all Animations (see switch case for numbers)
 
@@ -58,7 +60,7 @@ int maxCount=400;
 
 //GRAYSCALE VALUES
 uint8_t *animation;
-uint16_t ValueLed[CUBE_SIZE][CUBE_SIZE*CUBE_SIZE*3];
+uint8_t ValueLed[CUBE_SIZE][CUBE_SIZE*CUBE_SIZE*3];
 uint8_t charPosition;
 
 //SERIAL 
@@ -135,7 +137,7 @@ void loop(){
    // AllOff();
     //Select current animation for next Frame
     switch(curAnim){
-      case 0:randomLeds(30,30,30);//loadAnimation();//randomLeds(30,30,30);//AllGreen();//AllBlue();AllRed();//randomLeds(20,20,20);//RGBColorRoom();//ColorCycle();//SETLED(1,0,3][1*3+0*CUBE_SIZE*3]=4000;SETLED(1,BLUE,true))
+      case 0:AllOff();cubeGrow(FrameCount);cubeGrow((FrameCount+17)%34);//randomLeds(30,30,30);//loadAnimation();//randomLeds(30,30,30);//AllGreen();//AllBlue();AllRed();//randomLeds(20,20,20);//RGBColorRoom();//ColorCycle();//SETLED(1,0,3][1*3+0*CUBE_SIZE*3]=4000;SETLED(1,BLUE,true))
              break;
       case 1:AllRed();
              break;      
@@ -143,19 +145,19 @@ void loop(){
              break;       
       case 3:AllBlue();//ColorCycle();
              break;       
-      case 4:loadAnimationBit();//cube grow littleCube();
+      case 4:rain();//cube grow littleCube();
              break;       
       case 5:randomLedsFull();
              break;        
-      case 6:AllRed();AllGreen();AllBlue();
+      case 6:cubeGrow(FrameCount);
              break;  
       case 7:msgeqMusic();
              break;
-      case 8:AllRed();//loadAnimation();//waterfall //RGBColorCycle();
+      case 8:loadAnimationBit();//loadAnimation();//waterfall //RGBColorCycle();
              break;
       case 9:loadAnimationBit(); //AllRed(); AllGreen(); AllBlue();
              break;
-     case 10:cubeUp();
+     case 10:loadAnimationBit();
              break;
      case 99:textShow();//aniTest();
            break;
@@ -204,29 +206,21 @@ void BTEvent(){
             Serial.println(curAnim);
             #endif
       //CUBE GROW
-            if(curAnim==4){
+            if(curAnim==8){
                animation=&ani_cubegrowrgbit[0][0];
                FRAME_TIME=ANI_CUBEGROWRGBIT_FRAMETIME;
                maxCount=ANI_CUBEGROWRGBIT_FRAMES;
             }
-      // WATERFALL
-            else if(curAnim==8){
-               //animation=&ani_waterfall[0][0];
-               //FRAME_TIME=ANI_WATERFALL_FRAMETIME;
-              // maxCount=ANI_WATERFALL_FRAMES;
-            }
-            
       //WAVE SINGLE
-             else if(curAnim==9){/*
-               animation=&ani_wavecontinuous[0][0];
-               FRAME_TIME=ANI_WAVECONTINUOUS_FRAMETIME;
-               maxCount=ANI_WAVECONTINUOUS_FRAMES;*/
-               //animation=&ani_waterfall[0][0];
-               //FRAME_TIME=ANI_WATERFALL_FRAMETIME;
-               //maxCount=ANI_WATERFALL_FRAMES;
+			else if(curAnim==9){
                animation=&ani_waterfallrgbit[0][0];
                FRAME_TIME=ANI_WATERFALLRGBIT_FRAMETIME;
                maxCount=ANI_WATERFALLRGBIT_FRAMES;
+            }
+			else if(curAnim==10){
+                animation=&ani_cubebuildrgbit[0][0];
+               FRAME_TIME=ANI_CUBEBUILDRGBIT_FRAMETIME;
+               maxCount=ANI_CUBEBUILDRGBIT_FRAMES;
             }
       //MSGEQ7
             else if(curAnim==7){

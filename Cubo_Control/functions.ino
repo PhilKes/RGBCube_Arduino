@@ -10,9 +10,9 @@
       Tlc.set(LedGreen[y][x],ValueLed[layerno][LedGreen[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940
       Tlc.set(LedBlue[y][x],ValueLed[layerno][LedBlue[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940
       */
-      Tlc.set(x * 3 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + y * CUBE_SIZE * 3]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
-      Tlc.set(x * 3 + 1 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 1 + y * CUBE_SIZE * 3]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940 
-      Tlc.set(x * 3 + 2 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 2 + y * CUBE_SIZE * 3]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940 
+      Tlc.set(x * 3 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
+      Tlc.set(x * 3 + 1 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 1 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940 
+      Tlc.set(x * 3 + 2 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 2 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940 
     }
   PORTC = PORTC | B00111111;
   Tlc.update();
@@ -87,19 +87,78 @@ void cubeUp(){
     maxCount=500;
    }
    else{
-    /*
-      AllOff();
-      drawCube(posZ,posY,posX,3,RED);
-      if(posZ+1>CUBE_SIZE-1)
-        posZ=2;
-      else
-         posZ++;*/
-       // setXPillar(uint8_t y,uint8_t z,uint8_t xstart,uint8_t width, uint8_t color)
        setXPillar(1,1,2,2, RED);
        setYPillar(3,3,1,4, GREEN);
        setZPillar(4,0,3,3,BLUE);
     }
 }
+void cubeRotate(){
+	if(FrameCount==0)
+		maxCount=16*4;
+  AllOff();
+	drawCube(5-(FrameCount/(4*4)),(FrameCount%16)/4,FrameCount%4,3,RED);
+}
+
+/* Cubes growing/shrinking */
+void cubeGrow(uint8_t frame){
+  if(frame==0){
+    maxCount=34;
+    frame=1;
+  }
+  //AllOff();
+  if(frame<7)                        //RED GROW (5 Frames)
+    drawCubeHollowUp(0,0,0,frame,RED);
+  else if(frame<12)                  //RED SHRINK to width 1 (6 Frames)
+    drawCubeHollowUp(0,(frame+1)%7,(frame+1)%7,CUBE_SIZE-((frame+1)%7),RED);
+  else if(frame<18)                  //GREEN GROW
+    drawCubeHollowUp(0,CUBE_SIZE-1-(frame+2)%7,CUBE_SIZE-1-(frame+2)%7,(frame+3)%7,GREEN);
+  else if(frame<23)                  //GREEN SHRINK to width 1
+    drawCubeHollowUp(0,(frame+4)%7,0,CUBE_SIZE-(frame+4)%7,GREEN);
+  else if(frame<29)                  //BLUE GROW
+    drawCubeHollowUp(0,CUBE_SIZE-1-(frame+5)%7,0,(frame+6)%7,BLUE);
+  else if(frame<34)                  //BLUE SHRINK to width 1
+    drawCubeHollowUp(0,0,0,CUBE_SIZE-(frame+7)%7,BLUE);
+}
+
+void drawCubeHollowUp(uint8_t positionZ,uint8_t posY,uint8_t posX,uint8_t width,uint8_t color){
+  if(positionZ+width>CUBE_SIZE || posY+width>CUBE_SIZE || posX+width>CUBE_SIZE || width<1)
+    return;
+   setXPillar(posY,positionZ,posX,width,color);
+   setXPillar(posY+width-1,positionZ,posX,width,color);
+   setXPillar(posY,positionZ+width-1,posX,width,color);
+   setXPillar(posY+width-1,positionZ+width-1,posX,width,color);
+
+   setYPillar(posX,positionZ,posY,width,color);
+   setYPillar(posX+width-1,positionZ,posY,width,color);
+   setYPillar(posX,positionZ+width-1,posY,width,color);
+   setYPillar(posX+width-1,positionZ+width-1,posY,width,color);
+
+   setZPillar(posX,posY,positionZ,width,color);
+   setZPillar(posX+width-1,posY,positionZ,width,color);
+   setZPillar(posX,posY+width-1,positionZ,width,color);
+   setZPillar(posX+width-1,posY+width-1,positionZ,width,color);
+}
+
+/* Random Leds rain from top layer down*/
+void rain(){
+  for(int l=0;l<CUBE_SIZE-1;l++){
+    for(int x=0; x<CUBE_SIZE;x++){
+      for(int y=0;y<CUBE_SIZE;y++){
+        ValueLed[l][x*3+y*CUBE_SIZE*3+0]=ValueLed[l+1][x*3+y*CUBE_SIZE*3+0];
+        ValueLed[l][x*3+y*CUBE_SIZE*3+1]=ValueLed[l+1][x*3+y*CUBE_SIZE*3+1];
+        ValueLed[l][x*3+y*CUBE_SIZE*3+2]=ValueLed[l+1][x*3+y*CUBE_SIZE*3+2];
+        }
+      } 
+  }
+  clearLayer(CUBE_SIZE-1);
+  
+  for(int y=0; y<random8(22);y++){
+      uint8_t rd = random8(3);
+      SETLED(random8(6), random8(6), CUBE_SIZE-1, rd, maxBright)
+  }
+}
+
+  
 void drawCube(uint8_t positionZ,uint8_t posY,uint8_t posX,uint8_t width,uint8_t color){
   if(positionZ-width+1<0 || posY+width>CUBE_SIZE || posX+width>CUBE_SIZE)
     return;
@@ -114,6 +173,14 @@ void drawCube(uint8_t positionZ,uint8_t posY,uint8_t posX,uint8_t width,uint8_t 
  }
 }
 //----UTILITIES FOR ANIMATIONS
+void clearLayer(uint8_t layer){
+  for(int y=0;y<CUBE_SIZE;y++)
+    for(int x=0;x<CUBE_SIZE;x++){
+      SETLED(x,y,layer,RED,0)
+      SETLED(x,y,layer,GREEN,0) 
+      SETLED(x,y,layer,BLUE,0) 
+    }
+}
 void AllOff(){
   //micro=micros();
   for (int l = 0; l < CUBE_SIZE; l++)
@@ -125,19 +192,19 @@ void AllOff(){
  // memset(ValueLed[0],0,sizeof(ValueLed[0][0])*CUBE_SIZE*CUBE_SIZE*CUBE_SIZE*3);
   //Serial.println(micros()-micro);
 }
-void setXPillar(uint8_t y,uint8_t z,uint8_t xstart,uint8_t width, uint8_t color){
+inline void setXPillar(uint8_t y,uint8_t z,uint8_t xstart,uint8_t width, uint8_t color){
   if(xstart+width-1>CUBE_SIZE-1)
     return;
   for (int x = xstart; x < xstart+width; x++)
       SETLED(x, y, z, color, maxBright)
 }
- void setYPillar(uint8_t x, uint8_t z,uint8_t ystart,uint8_t width, uint8_t color){
+inline void setYPillar(uint8_t x, uint8_t z,uint8_t ystart,uint8_t width, uint8_t color){
   if(ystart+width-1>CUBE_SIZE-1)
     return;
   for (int y = ystart; y < ystart+width; y++)
     SETLED(x, y, z, color, maxBright)
 }
- void setZPillar(uint8_t x, uint8_t y,uint8_t zstart,uint8_t width, uint8_t color){
+inline void setZPillar(uint8_t x, uint8_t y,uint8_t zstart,uint8_t width, uint8_t color){
   if(zstart+width-1>CUBE_SIZE-1)
     return;
   for (int z = zstart; z < zstart+width;z++)
@@ -318,341 +385,7 @@ void textScroll(){
    // FrameCount = 1;
   }
 }
-void ColorCycle(){
-  if(FrameCount==0){
-    maxCount=31;
-    brightR=0;
-    brightG=0;
-    brightB=maxBright;
-  }
-  else if(FrameCount<11){
-    brightR+=400;
-    if(brightB>=400){brightB-=400;}
-  }
-  else if(FrameCount<21){
-    brightG+=400;
-    brightR-=400;
-  }
-  else if(FrameCount<31){
-    brightB+=400;
-    brightG-=400;
-  }
-  //else if(FrameCount==31){FrameCount=0;}
-  AllRed();
-  AllGreen();
-  AllBlue();
-}
-void RGBColorCycle(){
-  if (FrameCount == 0){
-    brightR = maxBright;
-    brightG = 0;
-    brightB = 0;
-  }
-   else if (FrameCount< FRAMECYCLES)
-    brightG += cyclestep;
-   else if (FrameCount< 2*FRAMECYCLES)
-    brightR -= cyclestep;
-  else if (FrameCount< 3*FRAMECYCLES)
-    brightB += cyclestep;
-  else if (FrameCount< 4*FRAMECYCLES)
-    brightG -= cyclestep;
-  else if (FrameCount< 5*FRAMECYCLES)
-    brightR += cyclestep;
-  else if (FrameCount< 6*FRAMECYCLES)
-    brightB -= cyclestep;
-  else
-    FrameCount = 0;
-  //else if(FrameCount==31){FrameCount=0;}
-  AllRed();
-  AllGreen();
-  AllBlue();
-}
-void Snake(){
-  if (FrameCount == 0)maxCount = 383;
-  if (FrameCount >= 0){
-    if (FrameCount == 0)maxCount = 383;
-    if (FrameCount >= 0){
-      int temp = FrameCount;
-      if (temp > 63)temp = 63;
-      for (int i = 0; i <= temp / (CUBE_SIZE*CUBE_SIZE); i++){
-        for (int j = 0; j <= temp % (CUBE_SIZE*CUBE_SIZE); j++)
-          SETLED(j%CUBE_SIZE , j / CUBE_SIZE ,i,RED, maxBright)
-        if (i > 0)
-          for (int k = 0; k < i; k++)
-            for (int x = 0; x < CUBE_SIZE; x++)
-              for (int y = 0; y < CUBE_SIZE; y++)
-                SETLED(x , y ,k,RED, maxBright)
-      }
-    }
-  }
-  if (FrameCount > 63){
-    int temp = FrameCount - 63;
-    if (temp > 63)temp = 63;
-    for (int i = 0; i <= temp / 16; i++){
-      for (int j = 0; j <= temp % 16; j++)
-        SETLED(j % 4 ,j / 4 ,i,GREEN,maxBright)
-      if (i > 0)
-        for (int k = 0; k < i; k++)
-          for (int x = 0; x < 4; x++)
-            for (int y = 0; y < 4; y++)
-              SETLED(x ,y ,k,GREEN,maxBright)
-    }
-  }
-  if (FrameCount > 127){
-    int temp = FrameCount - 127;
-    if (temp > 63)temp = 63;
-    for (int i = 0; i <= temp / 16; i++){
-      for (int j = 0; j <= temp % 16; j++)
-        SETLED(j % 4 ,j / 4 ,i,BLUE,maxBright)
-      if (i > 0)
-        for (int k = 0; k < i; k++)
-          for (int x = 0; x < 4; x++)
-            for (int y = 0; y < 4; y++)
-              SETLED(x ,y ,k,BLUE,maxBright)
-    }
-  }
-  if (FrameCount > 191){
-    int temp = FrameCount - 191;
-    if (temp > 63)temp = 63;
-    for (int i = 0; i <= temp / 16; i++){
-      for (int j = 0; j <= temp % 16; j++)
-        SETLED(j % 4 , j / 4 ,i,RED, 0)
-      if (i > 0)
-        for (int k = 0; k < i; k++)
-          for (int x = 0; x < 4; x++)
-            for (int y = 0; y < 4; y++)
-              SETLED(x , y ,k,RED, 0)
-    }
-  }
-  if (FrameCount > 255){
-    int temp = FrameCount - 255;
-    if (temp > 63)temp = 63;
-    for (int i = 0; i <= temp / 16; i++){
-      for (int j = 0; j <= temp % 16; j++)
-        SETLED(j % 4 ,j / 4 ,i,GREEN,0)
-      if (i > 0)
-        for (int k = 0; k < i; k++)
-          for (int x = 0; x < 4; x++)
-            for (int y = 0; y < 4; y++)
-              SETLED(x ,y ,k,GREEN,0)
-    }
-  }
-  if (FrameCount > 319){
-    int temp = FrameCount - 319;
-    if (temp > 63)temp = 63;
-    for (int i = 0; i <= temp / 16; i++){
-      for (int j = 0; j <= temp % 16; j++)
-        SETLED(j % 4 ,j / 4 ,i,BLUE,0)
-      if (i > 0)
-        for (int k = 0; k < i; k++)
-          for (int x = 0; x < 4; x++)
-            for (int y = 0; y < 4; y++)
-              SETLED(x ,y ,k,BLUE,0)
-    }
-  }
-    //if(FrameCount==383)
-    //  FrameCount=0;
-}
-void littleCube(){
-  AllOff();
-  switch(FrameCount){
-    case 0:
-  posX=1;
-  posY=1;
-  posZ=2;
-         break;
-    case 1:  
-    posZ--;
-              break;
-    case 2:  
-    posX++;
-              break;
-    case 3:
-    posY--;
-           break;
-    case 4:
-    posX--;
-            break;
-    case 5:
-    posX--;
-            break;
-    case 6:
-    posY++;
-              break;
-   case 7:
-    posY++;
-              break;
-    case 8:
-    posX++;
-              break;
-   case 9:
-    posX++;
-              break;
-   case 10:
-    posZ++;
-              break;
-   case 11:
-    posY--;
-              break;
-  case 12:
-    posY--;
-              break;
-  case 13:
-    posX--;
-              break;
-  case 14:
-    posX--;
-              break;
-   case 15:
-    posY++;
-              break;
-  case 16:
-    posY++;
-              break;
-  case 17:
-    posX++;
-              break;
-case 18:
-    posX++;
-              break;
-case 19:
-    posZ++;
-              break;
-case 20:
-    posY--;
-              break;
-case 21:
-    posY--;
-              break; 
-case 22:
-    posX--;
-              break; 
-case 23:
-    posX--;
-              break;  
- case 24:
-    posY++;
-              break;  
-case 25:
-    posY++;
-              break;  
-case 26: 
-    posX++;
-              break; 
-case 27:
-    posY--;
-            FrameCount=0;
-              break;        
-    default:
-                break;                
-  }
-  littleCube(posZ,posY,posX);
-}
-void Cubes4(){
-  if(FrameCount==0){  
-    brightR=maxBright;
-    brightG=0;
-    brightB=0;
-    littleCube(1,0,2);    //Rot
-    brightR=0;
-    brightG=maxBright;
-    brightB=0;
-    littleCube(3,2,2);    //Grün
-    brightR=0;
-    brightG=0;
-    brightB=maxBright;
-    littleCube(1,2,0);    //Blau
-    brightR=maxBright/2;
-    brightG=0;
-    brightB=maxBright/2;
-    littleCube(1,0,0);    //Rot+Blau
-    brightR=maxBright/2;
-    brightG=maxBright/2;
-    brightB=0;
-    littleCube(3,0,2);    //Rot+Grün
-    brightR=0;
-    brightG=maxBright/2;
-    brightB=maxBright/2;
-    littleCube(3,2,0);    //Blau+Grün
-    brightR=maxBright;
-    brightG=maxBright/2;
-    brightB=maxBright/4;
-    littleCube(3,0,0);    //Rot+Grün+(blau+rot)
-    brightR=maxBright/2;
-    brightG=maxBright;
-    brightB=maxBright/4;
-    littleCube(1,2,2);    //Grün+Blau+(grün+rot)
-  }
-      else if(FrameCount==1){ 
-    brightR=maxBright;
-    brightG=0;
-    brightB=0;
-    littleCube(3,2,2);    //Rot
-    brightR=0;
-    brightG=maxBright;
-    brightB=0;
-    littleCube(1,0,2);    //Grün
-    brightR=0;
-    brightG=0;
-    brightB=maxBright;
-    littleCube(1,0,0);    //Blau
-    brightR=maxBright/2;
-    brightG=0;
-    brightB=maxBright/2;
-    littleCube(1,2,0);    //Rot+Blau
-    brightR=maxBright/2;
-    brightG=maxBright/2;
-    brightB=0;
-    littleCube(3,2,0);    //Rot+Grün
-    brightR=0;
-    brightG=maxBright/2;
-    brightB=maxBright/2;
-    littleCube(3,0,2);    //Blau+Grün
-    brightR=maxBright;
-    brightG=maxBright/2;
-    brightB=maxBright/4;
-    littleCube(1,2,2);    //Rot+Grün+(blau+rot)
-    brightR=maxBright/2;
-    brightG=maxBright;
-    brightB=maxBright/4;
-    littleCube(3,0,0);    //Grün+Blau+(grün+rot)
-  }
-else if(FrameCount==2){ 
-    brightR=maxBright;
-    brightG=0;
-    brightB=0;
-    littleCube(1,2,0);    //Rot
-    brightR=0;
-    brightG=maxBright;
-    brightB=0;
-    littleCube(1,0,0);    //Grün
-    brightR=0;
-    brightG=0;
-    brightB=maxBright;
-    littleCube(1,0,2);    //Blau
-    brightR=maxBright/2;
-    brightG=0;
-    brightB=maxBright/2;
-    littleCube(3,2,2);    //Rot+Blau
-    brightR=maxBright/2;
-    brightG=maxBright/2;
-    brightB=0;
-    littleCube(3,0,0);    //Rot+Grün
-    brightR=0;
-    brightG=maxBright/2;
-    brightB=maxBright/2;
-    littleCube(1,2,0);    //Blau+Grün
-    brightR=maxBright;
-    brightG=maxBright/2;
-    brightB=maxBright/4;
-    littleCube(3,0,2);    //Rot+Grün+(blau+rot)
-    brightR=maxBright/2;
-    brightG=maxBright;
-    brightB=maxBright/4;
-    littleCube(3,2,0);    //Grün+Blau+(grün+rot)
-    FrameCount=0;
-  }
-}
+
 
 void littleCube(int positionZ,int posY,int posxX){
   for(int l=positionZ;l>posZ-2;l--){
