@@ -3,6 +3,7 @@
 #define SETLED(X,Y,L,COLOR,VAL)  ValueLed[(L)][(X) * 3 + (Y)* CUBE_SIZE * 3 + (COLOR)] = (VAL);
 //Sets new Values for next layer and sends to TLCs, switches Anodes
  void CubeUpdate(int layerno){
+  Tlc.clear();
   //unsigned long micro=micros();
   for (int y = 0; y < CUBE_SIZE; y++)
     for (int x = 0; x < CUBE_SIZE; x++){
@@ -14,7 +15,7 @@
       Tlc.set(x * 3 + 1 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 1 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940 
       Tlc.set(x * 3 + 2 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 2 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940 
     }
-  PORTC = PORTC | B00111111;
+    PORTC = PORTC | B00111111;
   Tlc.update();
   delay(1);
   PORTC = PORTC & (B00111111 & ~(1 << layer));
@@ -74,6 +75,73 @@ void loadAnimationBit(){
       }
 }
 
+void snake(char action){
+  AllOff();
+  //Move along direction
+  if(action!='-'){
+    switch(action){
+      case 'u':
+        snakeDir=4;
+        break;
+      case 'd':
+        snakeDir=5;
+        break;
+      case 'l':
+        snakeDir=2;
+        break;
+      case 'r':
+        snakeDir=3;
+        break;
+    }
+  }
+  
+    switch(snakeDir){
+      case 0:
+          snakeX=(snakeX+1)%CUBE_SIZE;
+          break;
+      case 1:
+          if(--snakeX<0)
+              snakeX=CUBE_SIZE-1;
+          break;
+      case 2:
+          snakeY=(snakeY+1)%CUBE_SIZE;
+          break;
+      case 3:
+           if(--snakeY<0)
+              snakeY=CUBE_SIZE-1;
+          break;
+      case 4:
+          snakeL=(snakeL+1)%CUBE_SIZE;
+          break;
+      case 5:
+          if(--snakeL<0)
+              snakeL=CUBE_SIZE-1;
+          break;
+      
+      //Update Tail
+      for(int i=1; i<snakeList.size();i++){
+          Point node=snakeList.get(i);
+          Point before=snakeList.get(i-1);
+          node.x=before.x; node.y=before.y; node.l=before.l;
+      }
+      //Update Head
+      Point head=snakeList.get(0);
+      head.x=snakeX;
+      head.y=snakeY;
+      head.l=snakeL;
+      //Draw Snake 
+      for(int i=0; i<snakeList.size();i++){
+          Point node=snakeList.get(i);
+          SETLED(node.x ,node.y ,node.l,GREEN,maxBright)
+      }
+  }
+}
+void testAll(){
+  FRAME_TIME=800;
+  AllOff();
+  maxCount=649;
+  ValueLed[FrameCount/(CUBE_SIZE*CUBE_SIZE*3)][FrameCount%(CUBE_SIZE*CUBE_SIZE*3)]=maxBright;
+}
 void testLed(int pin, int layer){/*
    Tlc.set(pin,maxbright);
    Tlc.update();*/

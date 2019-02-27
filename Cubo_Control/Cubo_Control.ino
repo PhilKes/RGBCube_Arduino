@@ -1,5 +1,5 @@
 #include "Tlc5940.h"
-
+#include "LinkedList.h"
 //DEBUG: 0 no Debug via Serial  1: BT Serial info and test Led ("onn"/"off") 2: All Debug (Frames,Layer,...)
 #define DEBUG 0
 
@@ -35,7 +35,7 @@ uint8_t layers[]={A0,A1,A2,A3,A4,A5};
 //FRAME & LAYER
 uint8_t curAnim;
 //LayerDuration 2860 min.
-uint16_t LayerDuration = 1500;
+uint16_t LayerDuration = 1750;
 uint16_t FRAME_TIME=FRAME_TIME_DEFAULT;
 //Default Frame Times for all Animations (see switch case for numbers)
 
@@ -69,6 +69,20 @@ char serialData[20];
 String text = "";
 //Counter for char Text
 uint8_t textChar = 0;
+char action ='-';
+uint8_t snakeX=0;
+uint8_t snakeY=0;
+uint8_t snakeL=0;
+//dir= 0 : x++ , 1: x-- , 2: y++, 3: y--, 4: z++, 5: z--
+uint8_t snakeDir=0;
+
+typedef struct {
+    int x;
+    int y;
+    int l;
+}Point; 
+LinkedList<Point> snakeList=LinkedList<Point>();
+LinkedList<Point> appleList=LinkedList<Point>();
 
 int blueScale = maxBright / 3;
 int redgreenScale = maxBright / 7;
@@ -151,7 +165,8 @@ void loop(){
              break;        
       case 6:cubeGrow(FrameCount);
              break;  
-      case 7:msgeqMusic();
+      case 7://msgeqMusic();
+            testAll();
              break;
       case 8:loadAnimationBit();//loadAnimation();//waterfall //RGBColorCycle();
              break;
@@ -160,6 +175,9 @@ void loop(){
      case 10:loadAnimationBit();
              break;
      case 99:textShow();//aniTest();
+           break;
+     case 100:snake(action);//aniTest();
+              action='-';
            break;
       default:randomLeds(1,0,0);
              break;   
@@ -228,7 +246,24 @@ void BTEvent(){
               maxCount=0;
             }
         }
-        
+    //SNAKE
+    else if (serialData[0] =='S'){
+      if(serialData[1]=='S'){ //START GAME
+         snakeX=0;
+         snakeY=0;
+         snakeL=0;
+        snakeList=LinkedList<Point>();
+        snakeList.add(Point{snakeX,snakeY,snakeL});
+        appleList=LinkedList<Point>();
+        action='-';
+        curAnim=100;
+        FrameCount=0;
+        FRAME_TIME=500;
+        maxCount=10;
+      }else if(serialData[1]=='A'){
+        action=serialData[2];
+      }
+    }
     //TEXT SHOW
     else if (serialData[0] == 'T'){
       AllOff();
