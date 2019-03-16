@@ -6,3 +6,6 @@ else(FrameTime?)
 	
 ValueLed to uint8_t -> setAllDC() ?
 Textscroll -> Whitespace at the end 
+
+Rain-> change Amount based on brightness setting
+Snake game

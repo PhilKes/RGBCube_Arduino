@@ -35,7 +35,7 @@ uint8_t layers[]={A0,A1,A2,A3,A4,A5};
 //FRAME & LAYER
 uint8_t curAnim;
 //LayerDuration 2860 min.
-uint16_t LayerDuration = 1750;
+uint16_t LayerDuration = 1700;
 uint16_t FRAME_TIME=FRAME_TIME_DEFAULT;
 //Default Frame Times for all Animations (see switch case for numbers)
 
@@ -159,7 +159,7 @@ void loop(){
              break;       
       case 3:AllBlue();//ColorCycle();
              break;       
-      case 4:rain();//cube grow littleCube();
+      case 4:rain(36);//cube grow littleCube();
              break;       
       case 5:randomLedsFull();
              break;        
@@ -311,13 +311,13 @@ void BTEvent(){
     //SPEED
     else if (serialData[0] == 'F'){
       //Break if curAnim is Music Spectrum
-      if (curAnim != 7){
-        int div = String(serialData).substring(1).toInt();
+      //if (curAnim != 7){
+        int dive = String(serialData).substring(1).toInt();
         //FRAME_TIME = ANIM_TIMES[curAnim] * (SPEED_DIV / div);
-        FRAME_TIME = FRAME_TIME_DEFAULT* (SPEED_DIV / div);
+        FRAME_TIME = FRAME_TIME_DEFAULT* (SPEED_DIV / dive);
         if (FRAME_TIME < FRAME_TIME_MIN)
           FRAME_TIME = FRAME_TIME_MIN;
-      }
+     // }
     }
     //Debug Bluetooth Testing
     #if DEBUG

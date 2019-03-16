@@ -3,7 +3,7 @@
 #define SETLED(X,Y,L,COLOR,VAL)  ValueLed[(L)][(X) * 3 + (Y)* CUBE_SIZE * 3 + (COLOR)] = (VAL);
 //Sets new Values for next layer and sends to TLCs, switches Anodes
  void CubeUpdate(int layerno){
-  Tlc.clear();
+ // Tlc.clear();
   //unsigned long micro=micros();
   for (int y = 0; y < CUBE_SIZE; y++)
     for (int x = 0; x < CUBE_SIZE; x++){
@@ -137,7 +137,7 @@ void snake(char action){
   }
 }
 void testAll(){
-  FRAME_TIME=800;
+  //FRAME_TIME=800;
   AllOff();
   maxCount=649;
   ValueLed[FrameCount/(CUBE_SIZE*CUBE_SIZE*3)][FrameCount%(CUBE_SIZE*CUBE_SIZE*3)]=maxBright;
@@ -208,7 +208,7 @@ void drawCubeHollowUp(uint8_t positionZ,uint8_t posY,uint8_t posX,uint8_t width,
 }
 
 /* Random Leds rain from top layer down*/
-void rain(){
+void rain(uint8_t amount){
   for(int l=0;l<CUBE_SIZE-1;l++){
     for(int x=0; x<CUBE_SIZE;x++){
       for(int y=0;y<CUBE_SIZE;y++){
@@ -220,7 +220,7 @@ void rain(){
   }
   clearLayer(CUBE_SIZE-1);
   
-  for(int y=0; y<random8(22);y++){
+  for(int y=0; y<random8(amount);y++){
       uint8_t rd = random8(3);
       SETLED(random8(6), random8(6), CUBE_SIZE-1, rd, maxBright)
   }
