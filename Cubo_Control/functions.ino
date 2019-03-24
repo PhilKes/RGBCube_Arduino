@@ -76,64 +76,110 @@ void loadAnimationBit(){
 }
 
 void snake(char action){
-  AllOff();
-  //Move along direction
-  if(action!='-'){
-    switch(action){
-      case 'u':
-        snakeDir=4;
-        break;
-      case 'd':
-        snakeDir=5;
-        break;
-      case 'l':
-        snakeDir=2;
-        break;
-      case 'r':
-        snakeDir=3;
-        break;
-    }
+  //AllOff();
+
+ /*for(int i=0;i<appleList.size();i++){
+      Point apple=appleList.get(i);
+      if(snakeX==apple.x && snakeY==apple.y && snakeL==apple.l){
+         appleList.remove(i);
+         appleList.add(Point{random8(5),random8(5),random8(5)}); 
+         snakeList.add(snakeList.get(snakeList.size()-1));
+      }
+  }*/
+  // CLEAR FRAME
+  Point head=snakeList.get(0);
+  SETLED(head.x ,head.y ,head.l,GREEN,0)
+  for(int i=1; i<snakeList.size();i++){
+      Point node=snakeList.get(i);
+      SETLED(node.x ,node.y ,node.l,BLUE,0)
   }
+  SETLED(apple.x ,apple.y ,apple.l,RED,0)
+
+  if(!snakeDead){
+    //CHECK APPLE
+    if(snakeX==apple.x && snakeY==apple.y && snakeL==apple.l){
+      //SCORE
+       apple=Point{random8(5),random8(5),random8(5)}; 
+       snakeList.add(snakeList.get(snakeList.size()-1));
+    }
   
-    switch(snakeDir){
-      case 0:
-          snakeX=(snakeX+1)%CUBE_SIZE;
+    //Move along direction
+    if(action!='-'){
+      switch(action){
+        case 'u':   //UP
+          snakeDir=4;
           break;
-      case 1:
-          if(--snakeX<0)
-              snakeX=CUBE_SIZE-1;
+        case 'd':   //DOWN
+          snakeDir=5;
           break;
-      case 2:
-          snakeY=(snakeY+1)%CUBE_SIZE;
+        case 'l':   //LEFT
+          snakeDir=2;
           break;
-      case 3:
-           if(--snakeY<0)
-              snakeY=CUBE_SIZE-1;
+        case 'r':   //RIGHT
+          snakeDir=3;
           break;
-      case 4:
-          snakeL=(snakeL+1)%CUBE_SIZE;
+        case 'f':  //FORWARD
+          snakeDir=0;
           break;
-      case 5:
-          if(--snakeL<0)
-              snakeL=CUBE_SIZE-1;
-          break;
-      
-      //Update Tail
-      for(int i=1; i<snakeList.size();i++){
-          Point node=snakeList.get(i);
-          Point before=snakeList.get(i-1);
-          node.x=before.x; node.y=before.y; node.l=before.l;
+        case 'b':   //BACKWARD
+            snakeDir=1;
+           break;
       }
-      //Update Head
-      Point head=snakeList.get(0);
-      head.x=snakeX;
-      head.y=snakeY;
-      head.l=snakeL;
-      //Draw Snake 
-      for(int i=0; i<snakeList.size();i++){
-          Point node=snakeList.get(i);
-          SETLED(node.x ,node.y ,node.l,GREEN,maxBright)
-      }
+    }
+      switch(snakeDir){
+        case 0:
+            snakeX=(snakeX+1)%CUBE_SIZE;
+            break;
+        case 1:
+            if(--snakeX<0)
+                snakeX=CUBE_SIZE-1;
+            break;
+        case 2:
+            snakeY=(snakeY+1)%CUBE_SIZE;
+            break;
+        case 3:
+             if(--snakeY<0)
+                snakeY=CUBE_SIZE-1;
+            break;
+        case 4:
+            snakeL=(snakeL+1)%CUBE_SIZE;
+            break;
+        case 5:
+            if(--snakeL<0)
+                snakeL=CUBE_SIZE-1;
+            break;
+  
+    }
+        //Update Tail
+        for(int i=snakeList.size()-1; i>0;i--){
+            Point node=snakeList.get(i);
+            Point before=snakeList.get(i-1);
+            node.x=before.x; node.y=before.y; node.l=before.l;
+            snakeList.set(i,node);
+        }
+        //Update Head
+        head.x=snakeX;
+        head.y=snakeY;
+        head.l=snakeL;
+        snakeList.set(0,head);
+        //CHECK HEAD COLLISON WITH TAIL
+        for(int i=1; i<snakeList.size();i++){
+            Point node=snakeList.get(i);
+            if(head.x==node.x && head.y==node.y && head.l==node.l){
+              //LOST
+              snakeDead=1;
+              break;  
+            } 
+        }
+        //Draw Frame 
+        SETLED(apple.x ,apple.y ,apple.l,RED,maxBright)
+        SETLED(head.x ,head.y ,head.l,GREEN,maxBright)
+        for(int i=1; i<snakeList.size();i++){
+            Point node=snakeList.get(i);
+            SETLED(node.x ,node.y ,node.l,BLUE,maxBright)
+        }
+  }else{ // DEATH ANIMATION
+    AllRed();
   }
 }
 void testAll(){
@@ -340,6 +386,20 @@ void setPaneVal(int pane, int val,uint8_t color){
    // ValueLed[l][x*3+1+y*CUBE_SIZE*3]=val;
    //ValueLed[l][x*3+2+y*CUBE_SIZE*3]=val;
 }
+
+void setPaneValAnalog(int pane, int val,uint8_t color){
+ for (int l = 0; l < CUBE_SIZE; l++)
+    for (int y = 0; y < CUBE_SIZE; y++){
+      int value=val-l*255;
+      if(value<0){
+        SETLED(pane, y, l, color, 0)
+      }
+      else{
+        SETLED(pane, y, l, color, value)
+      }
+    }
+}
+
 void setXYPane(uint8_t z,uint8_t color){
   for (int y = 0; y < CUBE_SIZE;y++)
     for (int x = 0; x< CUBE_SIZE; x++)

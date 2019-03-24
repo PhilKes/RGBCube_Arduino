@@ -35,7 +35,7 @@ uint8_t layers[]={A0,A1,A2,A3,A4,A5};
 //FRAME & LAYER
 uint8_t curAnim;
 //LayerDuration 2860 min.
-uint16_t LayerDuration = 1700;
+uint16_t LayerDuration = 1900;
 uint16_t FRAME_TIME=FRAME_TIME_DEFAULT;
 //Default Frame Times for all Animations (see switch case for numbers)
 
@@ -70,20 +70,20 @@ String text = "";
 //Counter for char Text
 uint8_t textChar = 0;
 char action ='-';
-uint8_t snakeX=0;
-uint8_t snakeY=0;
-uint8_t snakeL=0;
+int8_t snakeX=0;
+int8_t snakeY=0;
+int8_t snakeL=0;
 //dir= 0 : x++ , 1: x-- , 2: y++, 3: y--, 4: z++, 5: z--
 uint8_t snakeDir=0;
-
+uint8_t snakeDead=0;
 typedef struct {
     int x;
     int y;
     int l;
 }Point; 
 LinkedList<Point> snakeList=LinkedList<Point>();
-LinkedList<Point> appleList=LinkedList<Point>();
-
+//LinkedList<Point> appleList=LinkedList<Point>();
+Point apple=Point{};
 int blueScale = maxBright / 3;
 int redgreenScale = maxBright / 7;
 uint8_t cyclestep = maxBright / FRAMECYCLES;
@@ -100,8 +100,6 @@ void setup(){
    brightG=maxBright;
    brightB=maxBright;
    color=0;
-   curAnim=0;
-
   //Tlc.clear();
   for(int i=0;i<CUBE_SIZE;i++)  
     for(int j=0;j<CUBE_SIZE*CUBE_SIZE*3;j++)
@@ -165,8 +163,8 @@ void loop(){
              break;        
       case 6:cubeGrow(FrameCount);
              break;  
-      case 7://msgeqMusic();
-            testAll();
+      case 7:msgeqMusic();
+            //testAll();
              break;
       case 8:loadAnimationBit();//loadAnimation();//waterfall //RGBColorCycle();
              break;
@@ -182,6 +180,7 @@ void loop(){
       default:randomLeds(1,0,0);
              break;   
     }
+    Serial.println(curAnim);
      FrameCount ++;  
      if(FrameCount>=maxCount){FrameCount=0;}  
      frameTime=millis();
@@ -249,15 +248,21 @@ void BTEvent(){
     //SNAKE
     else if (serialData[0] =='S'){
       if(serialData[1]=='S'){ //START GAME
+        AllOff();
          snakeX=0;
          snakeY=0;
-         snakeL=0;
+         snakeL=4;
         snakeList=LinkedList<Point>();
         snakeList.add(Point{snakeX,snakeY,snakeL});
-        appleList=LinkedList<Point>();
+        //snakeList.add(Point{snakeX,snakeY,snakeL-1});
+        //appleList=LinkedList<Point>();
+        //appleList.add(Point{3,3,3});
+        snakeDead=0;
+        apple=Point{3,2,3};
         action='-';
         curAnim=100;
         FrameCount=0;
+        snakeDir=4;
         FRAME_TIME=500;
         maxCount=10;
       }else if(serialData[1]=='A'){
@@ -354,19 +359,20 @@ void msgeqMusic(){
     spectrumValue[i] = constrain(spectrumValue[i], 0, 1023);
     //spectrumValue[i] = map(spectrumValue[i], 0, 1023, 0, 4095);
     digitalWrite(MSGEQSTROBE, HIGH);
-    Serial.print(spectrumValue[i]);
-    spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,6);
-    Serial.print(" ");
+   // Serial.print(spectrumValue[i]);
+    //spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,6);
+    spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,1535);
+   // Serial.print(" ");
   }
-  Serial.println();
+ // Serial.println();
   spectrumValue[5]=spectrumValue[4];
   
   //for (int i = 0; i < 6;i++)
-    setPaneVal(0, spectrumValue[0],RED);
-    setPaneVal(1, spectrumValue[1],RED);
-    setPaneVal(2, spectrumValue[2],GREEN);
-    setPaneVal(3, spectrumValue[3],GREEN);
-    setPaneVal(4, spectrumValue[4],BLUE);
-    setPaneVal(5, spectrumValue[5],BLUE);
+    setPaneValAnalog(0, spectrumValue[5],BLUE);
+    setPaneValAnalog(1, spectrumValue[1],BLUE);
+    setPaneValAnalog(2, spectrumValue[2],GREEN);
+    setPaneValAnalog(3, spectrumValue[3],GREEN);
+    setPaneValAnalog(4, spectrumValue[4],RED);
+    setPaneValAnalog(5, spectrumValue[0],RED);
     
 }
