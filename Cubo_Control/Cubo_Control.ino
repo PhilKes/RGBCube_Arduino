@@ -23,11 +23,14 @@
 
 //EXTERNAL ANIMATIONS
 //#include "wallsVertical.h"
-#include "font6.h"
+#include "font6RGBit.h"
 //#include "cube_Grow.h"
 #include "waterfallRGBit.h"
 #include "cubeBuildRGBit.h"
-#include "cubeGrowRGBit.h"
+//#include "cubeGrowRGBit.h"
+#include "wavRGBit.h"
+#include "snakeDeath.h"
+#include "cubesMove.h"
 //#include "waveContinuous.h"
 
 uint8_t layers[]={A0,A1,A2,A3,A4,A5};
@@ -121,6 +124,13 @@ void setup(){
 #if DEBUG>1
  unsigned long micro=0;
 #endif
+/*
+void loop(){
+  msgeqMusic();
+  delay(11);
+}
+*/
+
 void loop(){
   //Layer Refresh
   if(micros()-oldMicros>= LayerDuration){
@@ -146,43 +156,37 @@ void loop(){
       Serial.println(millis()-frameTime);
      #endif
  
-   // AllOff();
     //Select current animation for next Frame
     switch(curAnim){
-      case 0:AllOff();cubeGrow(FrameCount);cubeGrow((FrameCount+17)%34);//randomLeds(30,30,30);//loadAnimation();//randomLeds(30,30,30);//AllGreen();//AllBlue();AllRed();//randomLeds(20,20,20);//RGBColorRoom();//ColorCycle();//SETLED(1,0,3][1*3+0*CUBE_SIZE*3]=4000;SETLED(1,BLUE,true))
+      case 0:AllOff();cubeGrow(FrameCount);cubeGrow((FrameCount+17)%34);
              break;
       case 1:AllRed();
              break;      
-      case 2:AllGreen();//wallSenk(brightR,brightG,brightB,true);//wallWaag(brightR,brightG,brightB,0,true);
+      case 2:AllGreen();
              break;       
-      case 3:AllBlue();//ColorCycle();
+      case 3:AllBlue();
              break;       
-      case 4:rain(36);//cube grow littleCube();
+      case 4:rain(36);
              break;       
       case 5:randomLedsFull();
              break;        
       case 6:cubeGrow(FrameCount);
              break;  
       case 7:msgeqMusic();
-            //testAll();
              break;
-      case 8:loadAnimationBit();//loadAnimation();//waterfall //RGBColorCycle();
+      case 8:
+      case 9:       
+      case 10:loadAnimationBit();
              break;
-      case 9:loadAnimationBit(); //AllRed(); AllGreen(); AllBlue();
-             break;
-     case 10:loadAnimationBit();
-             break;
-     case 99:textShow();//aniTest();
+     case 99:textShow();
            break;
-     case 100:snake(action);//aniTest();
+     case 100:snake(action);
               action='-';
            break;
       default:randomLeds(1,0,0);
              break;   
     }
-    Serial.println(curAnim);
-     FrameCount ++;  
-     if(FrameCount>=maxCount){FrameCount=0;}  
+     FrameCount=(FrameCount+1)%maxCount;   
      frameTime=millis();
    }
    
@@ -203,68 +207,53 @@ void loop(){
  
 //Execute Command
 void BTEvent(){
-      //Verbose Debug Info Bluetooth Command
-      #if DEBUG
-        Serial.println(String(serialData));
-        while(Serial.available()){Serial.read();}
-      #endif
-        //Change Animation
-        if(serialData[0]=='A'){
-            curAnim=String(serialData).substring(1).toInt();
-            brightR = maxBright;
-            brightG = maxBright;
-            brightB = maxBright;
-            FRAME_TIME=FRAME_TIME_DEFAULT;
-            FrameCount = 0;
-           //IMPORTANT!
-            AllOff();
-            #if DEBUG
-            Serial.print("Switched Anim: ");
-            Serial.println(curAnim);
-            #endif
-      //CUBE GROW
-            if(curAnim==8){
-               animation=&ani_cubegrowrgbit[0][0];
-               FRAME_TIME=ANI_CUBEGROWRGBIT_FRAMETIME;
-               maxCount=ANI_CUBEGROWRGBIT_FRAMES;
-            }
-      //WAVE SINGLE
-			else if(curAnim==9){
-               animation=&ani_waterfallrgbit[0][0];
-               FRAME_TIME=ANI_WATERFALLRGBIT_FRAMETIME;
-               maxCount=ANI_WATERFALLRGBIT_FRAMES;
-            }
-			else if(curAnim==10){
-                animation=&ani_cubebuildrgbit[0][0];
-               FRAME_TIME=ANI_CUBEBUILDRGBIT_FRAMETIME;
-               maxCount=ANI_CUBEBUILDRGBIT_FRAMES;
-            }
-      //MSGEQ7
-            else if(curAnim==7){
-              FRAME_TIME=50;
-              maxCount=0;
-            }
-        }
+    //Verbose Debug Info Bluetooth Command
+    #if DEBUG
+      Serial.println(String(serialData));
+      while(Serial.available()){Serial.read();}
+    #endif
+      //Change Animation
+    if(serialData[0]=='A'){
+        curAnim=String(serialData).substring(1).toInt();
+        brightR = maxBright;
+        brightG = maxBright;
+        brightB = maxBright;
+        FRAME_TIME=FRAME_TIME_DEFAULT;
+        FrameCount = 0;
+       //IMPORTANT!
+        AllOff();
+        #if DEBUG
+        Serial.print("Switched Anim: ");
+        Serial.println(curAnim);
+        #endif
+        //Custom Animations
+        switch(curAnim){
+          case 7: //MSGEQ7 Audio Visualizer
+            FRAME_TIME=50;
+            maxCount=0;
+            break;
+          case 8:
+             animation=&ani_waterfallrgbit[0][0];
+             FRAME_TIME=ANI_WATERFALLRGBIT_FRAMETIME;
+             maxCount=ANI_WATERFALLRGBIT_FRAMES;
+             break;
+           case 9:
+             animation=&ani_wavrgbit[0][0];
+             FRAME_TIME=ANI_WAVRGBIT_FRAMETIME;
+             maxCount=ANI_WAVRGBIT_FRAMES;
+             break;
+         case 10:
+             animation=&ani_cubesmove[0][0];
+             FRAME_TIME=ANI_CUBESMOVE_FRAMETIME;
+             maxCount=ANI_CUBESMOVE_FRAMES;
+             break;
+          }
+    }
     //SNAKE
     else if (serialData[0] =='S'){
       if(serialData[1]=='S'){ //START GAME
         AllOff();
-         snakeX=0;
-         snakeY=0;
-         snakeL=4;
-        snakeList=LinkedList<Point>();
-        snakeList.add(Point{snakeX,snakeY,snakeL});
-        //snakeList.add(Point{snakeX,snakeY,snakeL-1});
-        //appleList=LinkedList<Point>();
-        //appleList.add(Point{3,3,3});
-        snakeDead=0;
-        apple=Point{3,2,3};
-        action='-';
-        curAnim=100;
-        FrameCount=0;
-        snakeDir=4;
-        FRAME_TIME=500;
-        maxCount=10;
+         initSnakeGame();
       }else if(serialData[1]=='A'){
         action=serialData[2];
       }
@@ -281,8 +270,8 @@ void BTEvent(){
       Serial.print("Text: ");
       Serial.println(text);
       #endif
-      animation = &ani_font6[0][0];
-      FRAME_TIME = ANI_FONT6_FRAMETIME;
+      animation = &ani_font6rgbit[0][0];
+      FRAME_TIME = ANI_FONT6RGBIT_FRAMETIME;
       //maxCount = ANI_FONT6_FRAMES+1;
       maxCount=(text.length()-1);
     }
@@ -315,14 +304,11 @@ void BTEvent(){
     }
     //SPEED
     else if (serialData[0] == 'F'){
-      //Break if curAnim is Music Spectrum
-      //if (curAnim != 7){
         int dive = String(serialData).substring(1).toInt();
         //FRAME_TIME = ANIM_TIMES[curAnim] * (SPEED_DIV / div);
         FRAME_TIME = FRAME_TIME_DEFAULT* (SPEED_DIV / dive);
         if (FRAME_TIME < FRAME_TIME_MIN)
           FRAME_TIME = FRAME_TIME_MIN;
-     // }
     }
     //Debug Bluetooth Testing
     #if DEBUG
@@ -332,6 +318,21 @@ void BTEvent(){
          ledOn();
     #endif
 
+}
+void initSnakeGame(){
+  snakeX=0;
+  snakeY=0;
+  snakeL=4;
+  snakeList=LinkedList<Point>();
+  snakeList.add(Point{snakeX,snakeY,snakeL});
+  snakeDead=0;
+  apple=Point{3,2,3};
+  action='-';
+  curAnim=100;
+  FrameCount=0;
+  snakeDir=4;
+  FRAME_TIME=500;
+  maxCount=10;
 }
 //Debug methods for testing Bluetooth
 #if DEBUG
@@ -345,7 +346,7 @@ void BTEvent(){
         delay(10);
   }
 #endif
-
+/*
 //MSGEQ7 Spectrum Analyzer
 void msgeqMusic(){
   //AllOff();
@@ -359,20 +360,55 @@ void msgeqMusic(){
     spectrumValue[i] = constrain(spectrumValue[i], 0, 1023);
     //spectrumValue[i] = map(spectrumValue[i], 0, 1023, 0, 4095);
     digitalWrite(MSGEQSTROBE, HIGH);
-   // Serial.print(spectrumValue[i]);
-    //spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,6);
-    spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,1535);
+    //Serial.print(spectrumValue[i]);
+    spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,6);
    // Serial.print(" ");
   }
- // Serial.println();
-  spectrumValue[5]=spectrumValue[4];
+ 
+  //for (int i = 0; i < 6;i++)
+    setPaneValY(0, spectrumValue[4],BLUE);
+    setPaneValY(1, spectrumValue[4],BLUE);
+    setPaneValY(2, spectrumValue[3],GREEN);
+    setPaneValY(3, spectrumValue[2],GREEN);
+    setPaneValY(4, spectrumValue[1],RED);
+    setPaneValY(5, spectrumValue[0],RED);
+    
+}
+*/
+//MSGEQ7 Spectrum Analyzer
+void msgeqMusic(){
+  //AllOff();
+  digitalWrite(MSGEQRESET, HIGH);
+  digitalWrite(MSGEQRESET, LOW);
+  for (int i=0;i<5;i++){
+    digitalWrite(MSGEQSTROBE, LOW);
+    delayMicroseconds(30);
+    //Read i-th Audio Band value
+    spectrumValue[i]=analogRead(MSGEQOUT);
+    spectrumValue[i] = constrain(spectrumValue[i], 0, 1023);
+    //spectrumValue[i] = map(spectrumValue[i], 0, 1023, 0, 4095);
+    digitalWrite(MSGEQSTROBE, HIGH);
+    //Serial.print(spectrumValue[i]);
+    if(i==0 && spectrumValue[i]>60)
+      spectrumValue[i]*=1.5;
+    
+    //spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,1535);
+   // Serial.print(" ");
+  }
+  spectrumValue[4]=spectrumValue[3]*0.5;
+  spectrumValue[5]=spectrumValue[1]*0.5;
+  for(int i=0;i<6;i++){
+     spectrumValue[i] = map(spectrumValue[i], 0, 1023,0,6);
+  }
+  //Serial.println();
+ 
   
   //for (int i = 0; i < 6;i++)
-    setPaneValAnalog(0, spectrumValue[5],BLUE);
-    setPaneValAnalog(1, spectrumValue[1],BLUE);
-    setPaneValAnalog(2, spectrumValue[2],GREEN);
-    setPaneValAnalog(3, spectrumValue[3],GREEN);
-    setPaneValAnalog(4, spectrumValue[4],RED);
-    setPaneValAnalog(5, spectrumValue[0],RED);
+    setPaneValY(0, spectrumValue[5],BLUE);
+    setPaneValY(1, spectrumValue[4],BLUE);
+    setPaneValY(2, spectrumValue[2],GREEN);
+    setPaneValY(3, spectrumValue[3],GREEN);
+    setPaneValY(4, spectrumValue[1],RED);
+    setPaneValY(5, spectrumValue[0],RED);
     
 }

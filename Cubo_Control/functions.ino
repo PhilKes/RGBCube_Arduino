@@ -7,21 +7,18 @@
   //unsigned long micro=micros();
   for (int y = 0; y < CUBE_SIZE; y++)
     for (int x = 0; x < CUBE_SIZE; x++){
-      /*Tlc.set(LedRed[y][x],ValueLed[layerno][LedRed[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
-      Tlc.set(LedGreen[y][x],ValueLed[layerno][LedGreen[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940
-      Tlc.set(LedBlue[y][x],ValueLed[layerno][LedBlue[y][x]]);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940
-      */
       Tlc.set(x * 3 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); first TLC5940
       Tlc.set(x * 3 + 1 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 1 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); second TLC5940 
       Tlc.set(x * 3 + 2 + y * CUBE_SIZE * 3, ValueLed[layerno][x * 3 + 2 + y * CUBE_SIZE * 3]*16);             // set AaR brightness to AchR OUTPUT(OUTPUT 0); third TLC5940 
     }
-    PORTC = PORTC | B00111111;
+  PORTC = PORTC | B00111111;
   Tlc.update();
   delay(1);
   PORTC = PORTC & (B00111111 & ~(1 << layer));
 }
 
 //Loads Frame from extern. Animations from PROGMEM into ValueLed Buffer
+// OLD--
 void loadAnimation(){
   for (int l = 0; l < CUBE_SIZE; l++)
     for (int y = 0; y < CUBE_SIZE; y++)
@@ -39,6 +36,7 @@ void loadAnimation(){
 }
 
 //Load Animation with RGBit coding (each color has 1 bit)
+// NEW
 void loadAnimationBit(){
       uint8_t color=0;
       uint8_t x=0;
@@ -76,16 +74,6 @@ void loadAnimationBit(){
 }
 
 void snake(char action){
-  //AllOff();
-
- /*for(int i=0;i<appleList.size();i++){
-      Point apple=appleList.get(i);
-      if(snakeX==apple.x && snakeY==apple.y && snakeL==apple.l){
-         appleList.remove(i);
-         appleList.add(Point{random8(5),random8(5),random8(5)}); 
-         snakeList.add(snakeList.get(snakeList.size()-1));
-      }
-  }*/
   // CLEAR FRAME
   Point head=snakeList.get(0);
   SETLED(head.x ,head.y ,head.l,GREEN,0)
@@ -94,15 +82,8 @@ void snake(char action){
       SETLED(node.x ,node.y ,node.l,BLUE,0)
   }
   SETLED(apple.x ,apple.y ,apple.l,RED,0)
-
+  //Movement
   if(!snakeDead){
-    //CHECK APPLE
-    if(snakeX==apple.x && snakeY==apple.y && snakeL==apple.l){
-      //SCORE
-       apple=Point{random8(5),random8(5),random8(5)}; 
-       snakeList.add(snakeList.get(snakeList.size()-1));
-    }
-  
     //Move along direction
     if(action!='-'){
       switch(action){
@@ -162,15 +143,31 @@ void snake(char action){
         head.y=snakeY;
         head.l=snakeL;
         snakeList.set(0,head);
+        
         //CHECK HEAD COLLISON WITH TAIL
         for(int i=1; i<snakeList.size();i++){
             Point node=snakeList.get(i);
             if(head.x==node.x && head.y==node.y && head.l==node.l){
               //LOST
-              snakeDead=1;
+              //Serial.print("Dead\\");
+               Serial.print("Dead\\");
+               snakeDead=1;
+               FrameCount=0-1;
+               animation=&ani_snakedeath[0][0];
+               FRAME_TIME=ANI_SNAKEDEATH_FRAMETIME;
+               maxCount=ANI_SNAKEDEATH_FRAMES;
               break;  
             } 
         }
+        
+        //CHECK APPLE
+        if(snakeX==apple.x && snakeY==apple.y && snakeL==apple.l){
+          //SCORE
+           apple=Point{random8(5),random8(5),random8(5)}; 
+           snakeList.add(snakeList.get(snakeList.size()-1));
+           Serial.print("Apple\\");
+        }
+        
         //Draw Frame 
         SETLED(apple.x ,apple.y ,apple.l,RED,maxBright)
         SETLED(head.x ,head.y ,head.l,GREEN,maxBright)
@@ -179,7 +176,9 @@ void snake(char action){
             SETLED(node.x ,node.y ,node.l,BLUE,maxBright)
         }
   }else{ // DEATH ANIMATION
-    AllRed();
+    loadAnimationBit();
+    if(FrameCount==maxCount-1)
+      FrameCount--;
   }
 }
 void testAll(){
@@ -193,19 +192,7 @@ void testLed(int pin, int layer){/*
    Tlc.update();*/
   ValueLed[layer][pin] = 4000;
 }
-void cubeUp(){
-  if(FrameCount==0){
-    posX=0;
-    posY=0;
-    posZ=2;
-    maxCount=500;
-   }
-   else{
-       setXPillar(1,1,2,2, RED);
-       setYPillar(3,3,1,4, GREEN);
-       setZPillar(4,0,3,3,BLUE);
-    }
-}
+
 void cubeRotate(){
 	if(FrameCount==0)
 		maxCount=16*4;
@@ -387,17 +374,33 @@ void setPaneVal(int pane, int val,uint8_t color){
    //ValueLed[l][x*3+2+y*CUBE_SIZE*3]=val;
 }
 
+void setPaneValY(int pane, int val,uint8_t color){
+  for (int l = 0; l < val; l++)
+    for (int x = 0; x < CUBE_SIZE; x++)
+      SETLED(x, pane, l, color, maxBright)
+  for (int l = val; l < CUBE_SIZE; l++)
+    for (int x = 0; x < CUBE_SIZE; x++)
+     SETLED(x, pane, l, color, 0)
+
+  //ValueLed[l][+ y * CUBE_SIZE * 3] = val; //RED ONLY
+   // ValueLed[l][x*3+1+y*CUBE_SIZE*3]=val;
+   //ValueLed[l][x*3+2+y*CUBE_SIZE*3]=val;
+}
+
 void setPaneValAnalog(int pane, int val,uint8_t color){
- for (int l = 0; l < CUBE_SIZE; l++)
-    for (int y = 0; y < CUBE_SIZE; y++){
-      int value=val-l*255;
+  int value=val;
+ for (int l = 0; l < CUBE_SIZE; l++){
+    for (int x = 0; x < CUBE_SIZE; x++){
+      //int value=val-l*255;
       if(value<0){
-        SETLED(pane, y, l, color, 0)
+        SETLED(x, pane, l, color, 0)
       }
       else{
-        SETLED(pane, y, l, color, value)
+        SETLED(x, pane, l, color, value)
       }
     }
+      value-=255;
+ }
 }
 
 void setXYPane(uint8_t z,uint8_t color){
@@ -423,17 +426,6 @@ void randomLedsFull(){
       for (uint8_t y = 0; y < CUBE_SIZE; y++){
         uint8_t rand = random8(3);
         SETLED(x,y,j,rand,maxBright);
-        /*
-        if (rand == BLUE)
-          //Blue
-          SETLED(x ,y ,j,BLUE,maxbright)
-        else if (rand == 1)
-          //Green
-          SETLED(x ,y ,j,GREEN,maxbright)
-        else if (rand == 2)
-          //Red
-          SETLED(x ,y ,j,RED,maxbright)
-         */
       }
     }
     FrameCount = 0;
@@ -473,12 +465,13 @@ void textShow(){
     Serial.print(" | ");
     Serial.println(FrameCount);
     #endif
-    loadAnimation();
+    loadAnimationBit();
    }
   charPosition++;
   FrameCount= charPosition;
   textChar = (textChar + 1) % text.length();
 }
+/*
 //Scrolls through text sent via BT
 void textScroll(){
   if(FrameCount>0){
@@ -486,7 +479,7 @@ void textScroll(){
     for(int l=0;l<CUBE_SIZE;l++)
       for(int x=1;x<CUBE_SIZE;x++){
         //COLOR IMPORTANT
-        SETLED(x-1,y,l,ValueLed[l][x*3+y*3*CUBE_SIZE],BLUE);  
+        SETLED(x-1,y,l,BLUE,ValueLed[l][x*3+y*3*CUBE_SIZE]);  
       }
       uint8_t ch = text.charAt(textChar) - 65;
       for(int l=0;l< CUBE_SIZE;l++){
@@ -509,12 +502,12 @@ void textScroll(){
     }
   else{
     FrameCount = text.charAt(0) - 65;
-    loadAnimation();
+    loadAnimationBit();
    // FrameCount = 1;
   }
 }
 
-
+*/
 void littleCube(int positionZ,int posY,int posxX){
   for(int l=positionZ;l>posZ-2;l--){
    for(int y=posY;y<posY+2;y++){
