@@ -23,3 +23,4 @@
 * Create custom Animations using simple UI
 * Simulate Animation in Java3D Scene
 * Saves Animations in two dimensional Array for PROGMEM of Arduino
+* See [AnimationCreator repository](https://github.com/PhilKes/AnimationCreator) for more details & .jar release
